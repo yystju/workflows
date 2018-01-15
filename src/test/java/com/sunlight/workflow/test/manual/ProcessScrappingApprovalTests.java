@@ -12,6 +12,7 @@ import java.text.SimpleDateFormat;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import javax.imageio.ImageIO;
 import javax.swing.JDialog;
@@ -37,6 +38,51 @@ public class ProcessScrappingApprovalTests {
 	@Rule
 	public ActivitiRule activitiRule = new ActivitiRule("activiti.cfg.xml");
 
+	@Test
+	@Deployment(resources = { "diagrams/scrapping_approval.bpmn" })
+	public void testThreshold() throws Exception {
+		DateFormat fmt = new SimpleDateFormat("yyyy-MM-dd HH:mm:ssX");
+
+		activitiRule.getIdentityService().setAuthenticatedUserId("user1");
+		activitiRule.setCurrentTime(fmt.parse("2018-01-01 00:00:00+08:00"));
+
+		HashMap<String, Object> map = new HashMap<String, Object>();
+
+		map.put("input", "This is a test.");
+		map.put("reviewType", "A");
+		map.put("approved", "true");
+
+		ProcessInstance processInstance = activitiRule.getRuntimeService()
+				.startProcessInstanceByKey("scrapping_approval_process", map);
+
+		assertNotNull(processInstance);
+
+		progressDialog(processInstance);
+
+		showHistory();
+
+		List<Task> tasks = activitiRule.getTaskService().createTaskQuery().list();
+
+		for (Task task : tasks) {
+			logger.info("TASK : {}", task.getName());
+
+			activitiRule.getTaskService().claim(task.getId(), "hello");
+			
+			Map<String, Object> taskVariables = activitiRule.getTaskService().getVariables(task.getId());
+			
+			activitiRule.getTaskService().complete(task.getId(), taskVariables);
+		}
+
+		progressDialog(processInstance);
+
+		processInstance = activitiRule.getRuntimeService().createProcessInstanceQuery()
+				.processInstanceId(processInstance.getId()).singleResult();
+
+		logger.info("Process is ended : {}", (processInstance == null || processInstance.isEnded()));
+
+		showHistory();
+	}
+	
 	@Test
 	@Deployment(resources = { "diagrams/scrapping_approval.bpmn" })
 	public void test() throws Exception {

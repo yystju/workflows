@@ -34,7 +34,11 @@
     <userTask id="firstLevelReview" name="一级审批" activiti:candidateGroups="ROLE_DEFECT_TYPEA_LEVEL1_REVIEWER"></userTask>
     <sequenceFlow id="flow9" sourceRef="startTypeAReview" targetRef="firstLevelReview"></sequenceFlow>
     <userTask id="secondLevelReview" name="二级结单授权" activiti:candidateGroups="ROLE_DEFECT_TYPEA_LEVEL2_AUTHORIZER"></userTask>
-    <exclusiveGateway id="exclusivegateway3" name="Exclusive Gateway"></exclusiveGateway>
+    <exclusiveGateway id="exclusivegateway3" name="Exclusive Gateway">
+      <extensionElements>
+        <activiti:executionListener event="start" class="com.sunlight.worflow.listeners.ScrapProcessThresholdCalculationListener"></activiti:executionListener>
+      </extensionElements>
+    </exclusiveGateway>
     <sequenceFlow id="flow10" sourceRef="firstLevelReview" targetRef="exclusivegateway3"></sequenceFlow>
     <sequenceFlow id="flow11" name="批准" sourceRef="exclusivegateway3" targetRef="exclusivegateway4">
       <conditionExpression xsi:type="tFormalExpression"><![CDATA[${approved == true}]]></conditionExpression>
